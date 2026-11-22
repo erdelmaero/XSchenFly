@@ -139,7 +139,8 @@ def test_render():
     assert text(page, 4).startswith("122.800 <>") and text(page, 4).endswith("121.500")
     assert text(page, 8).startswith("VHF1 ") and "TX" not in text(page, 8) and text(page, 8).endswith(" VHF2")
     assert color_at(page, 8, 0) == "G" and color_at(page, 8, 23) == "B"
-    assert text(page, 10).startswith("VHF1 ON") and text(page, 10).endswith("VHF2 OFF")
+    assert text(page, 10) == "VHF1" + " " * 16 + "VHF2"
+    assert color_at(page, 10, 0) == "G" and color_at(page, 10, 23) == "B"
     assert page[1][3 * 1 + 1] == 1  # labels small font
 
 
@@ -185,7 +186,7 @@ def test_rmp2_on_vhf1_vhf1_via_rmp1_when_tuned():
 
 def test_rx_from_xpilot():
     page = opened().render(dict(V, **{rp.RX[1]: 1, rp.LISTEN[2]: 1, rp.RX[2]: 1}))
-    assert text(page, 10).startswith("VHF1 ON RX") and text(page, 10).endswith("VHF2 ON RX")
+    assert text(page, 10).startswith("VHF1 RX") and text(page, 10).endswith("VHF2 RX")
     page = opened().render(V)  # no xPilot values: no RX
     assert "RX" not in text(page, 10)
 

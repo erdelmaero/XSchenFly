@@ -253,7 +253,7 @@ class RadioPage:
             put(8, 0, f"VHF{radio}" + (" (TX)" if talking else ""), "G" if sel else "B", right=right)
             on = bool(int(values.get(LISTEN[radio], 0)))
             rx = " RX" if int(values.get(RX[radio], 0)) else ""
-            put(10, 0, f"VHF{radio} " + ("ON" if on else "OFF") + rx, "G" if on else "B", right=right)
+            put(10, 0, f"VHF{radio}" + rx, "G" if on else "B", right=right)  # green = listening, cyan = off
         if self.message:
             put(13, 0, self.message, "A")
         else:

@@ -115,7 +115,7 @@ The ATC COMM key of the captain MCDU opens a VHF radio page instead of the ToLis
  TRANSMIT
 VHF1 (TX)          VHF2     LSK4L/R transmit on VHF1/VHF2 (green), (TX) while PTT is held
  LISTEN
-VHF1 ON RX     VHF2 OFF    LSK5L/R monitor on/off, RX = receiving (xPilot)
+VHF1 RX            VHF2     LSK5L/R monitor on/off (green = on), RX = receiving (xPilot)
 121.8                       own scratchpad: digits, '.', CLR
 ```
 * Frequencies: `121.8`, `121.800`, `1218` or `121800`; 118.000-136.990, 25 kHz and 8.33 kHz channels.
