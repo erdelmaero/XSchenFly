@@ -45,9 +45,12 @@ CMD_SELECT = {(1, 1): "AirbusFBW/VHF1Capt", (1, 2): "AirbusFBW/VHF2Capt",  # (RM
 
 
 def rmp_for(radio, values):
-    """(RMP number, actions to select the radio on it first). Prefers RMP1 for VHF1 and RMP2 for VHF2."""
-    for r in (radio, 3 - radio):
-        if int(values.get(RMP_SEL[r], radio - 1 if r == radio else -1)) == radio - 1:
+    """(RMP number, actions to select the radio on it first).
+    The captain RMP comes first when it is tuned to the radio (the page is on the captain MCDU and each RMP keeps
+    its own standby per radio), then the copilot RMP. If neither is tuned to it, the radio is selected on its
+    default RMP (VHF1 on RMP1, VHF2 on RMP2)."""
+    for r in (1, 2):
+        if int(values.get(RMP_SEL[r], r - 1)) == radio - 1:  # default when unknown: RMP1 = VHF1, RMP2 = VHF2
             return r, []
     return radio, [("cmd", CMD_SELECT[(radio, radio)])]
 

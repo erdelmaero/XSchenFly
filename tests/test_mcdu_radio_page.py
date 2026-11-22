@@ -9,7 +9,7 @@ V = {  # VHF1 TX + listen, VHF2 not heard
     rp.FREQ[1]: 121800, rp.STBY[1]: 118705, rp.FREQ[2]: 122800, rp.STBY[2]: 121500,
     rp.TX: 6, rp.LISTEN[1]: 1, rp.LISTEN[2]: 0,
     rp.RMP_SEL[1]: 0, rp.RMP_SEL[2]: 1,  # RMP1 on VHF1, RMP2 on VHF2 (normal)
-    rp.MEM[(1, 1)]: 118.70613, rp.MEM[(1, 2)]: 121.70613, rp.MEM[(2, 1)]: 136.575, rp.MEM[(2, 2)]: 121.50613,
+    rp.MEM[(1, 1)]: 118.70613, rp.MEM[(1, 2)]: 121.70613, rp.MEM[(2, 1)]: 136.575, rp.MEM[(2, 2)]: 121.5,
 }
 RMP1_ON_VHF2 = dict(V, **{rp.STBY[1]: 121705, rp.RMP_SEL[1]: 1})  # captain pressed VHF2 on his RMP
 CROSSED = dict(V, **{rp.STBY[1]: 121705, rp.RMP_SEL[1]: 1, rp.STBY[2]: 136575, rp.RMP_SEL[2]: 0})
@@ -152,11 +152,11 @@ def test_rmp1_on_vhf2_vhf1_uses_memory_and_selects_first():
     p = opened()
     page = p.render(RMP1_ON_VHF2)
     assert text(page, 2).endswith("118.705>")  # VHF1 standby from RMP1 memory, not RMP1 window (VHF2)
-    assert text(page, 4).endswith("121.500>")  # VHF2 via RMP2
+    assert text(page, 4).endswith("121.705>")  # VHF2 via RMP1 (captain first)
     assert p.handle_key("LSK1L", RMP1_ON_VHF2)[1] == [("cmd", "AirbusFBW/VHF1Capt"), ("cmd", rp.CMD_SWAP[1])]
     p.handle_key("KEY1", RMP1_ON_VHF2), p.handle_key("KEY2", RMP1_ON_VHF2), p.handle_key("KEY0", RMP1_ON_VHF2)
     assert p.handle_key("LSK1R", RMP1_ON_VHF2)[1] == [("cmd", "AirbusFBW/VHF1Capt"), ("dref", rp.STBY[1], 120000)]
-    assert p.handle_key("LSK2L", RMP1_ON_VHF2)[1] == [("cmd", rp.CMD_SWAP[2])]
+    assert p.handle_key("LSK2L", RMP1_ON_VHF2)[1] == [("cmd", rp.CMD_SWAP[1])]
 
 
 def test_crossed_rmps_use_the_tuned_one():
@@ -173,3 +173,11 @@ def test_memory_rounding_to_channel_names():
                      (136.575, 136575), (118.70613, 118705)):
         v = dict(V, **{rp.RMP_SEL[1]: 1, rp.RMP_SEL[2]: 1, rp.MEM[(1, 1)]: mhz})
         assert rp.stby_khz(1, v) == khz, mhz
+
+
+def test_rmp2_on_vhf1_vhf1_via_rmp1_when_tuned():
+    v = dict(V, **{rp.RMP_SEL[2]: 0, rp.STBY[2]: 136575})  # both RMPs on VHF1, nobody on VHF2
+    p = opened()
+    assert p.handle_key("LSK1L", v)[1] == [("cmd", rp.CMD_SWAP[1])]  # captain RMP
+    assert p.handle_key("LSK2L", v)[1] == [("cmd", "AirbusFBW/VHF2Co"), ("cmd", rp.CMD_SWAP[2])]
+    assert text(p.render(v), 4).endswith("121.500>")  # RMP2 memory of VHF2
