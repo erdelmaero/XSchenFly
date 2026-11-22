@@ -103,6 +103,27 @@ because it does not know which serial number it should use.
 5. enjoy flying (and report bugs :-)  )
 
 
+### MCDU radio page (ATC COMM key)
+The ATC COMM key of the captain MCDU opens a VHF radio page instead of the ToLiss CPDLC page
+(CPDLC is still available via MCDU MENU -> ATSU). Handy for VATSIM: it shows what xPilot uses.
+```
+        VHF RADIO
+ VHF1 ACTIVE       STBY
+<121.800       118.705>     LSK1L swap VHF1      LSK1R scratchpad -> VHF1 standby
+ VHF2 ACTIVE       STBY
+<122.800       121.500>     LSK2L swap VHF2      LSK2R scratchpad -> VHF2 standby
+ TRANSMIT
+<VHF1*           VHF2 >     LSK4L/R transmit on VHF1/VHF2
+ LISTEN
+<VHF1 ON       VHF2 OFF>    LSK5L/R monitor on/off
+121.8                       own scratchpad: digits, '.', CLR
+```
+* Frequencies: `121.8`, `121.800`, `1218` or `121800`; 118.000-136.990, 25 kHz and 8.33 kHz channels.
+  Empty scratchpad + LSK1R/2R copies the standby frequency into the scratchpad.
+* Transmit works like a Garmin audio panel: the new transmit radio is heard, the old one is switched off.
+  The other radio can be monitored with LISTEN; the transmit radio is always heard.
+* ATC COMM again or any page key (FPLN, PERF, MENU, ...) leaves the radio page.
+
 ## developer documentation
 See [documention](./documentation/README.md) for developers. TODO
 

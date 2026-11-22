@@ -7,6 +7,7 @@ from time import sleep
 import hid
 
 import XPlaneUdp
+import devices.mcdu_radio_page as mcdu_radio_page
 
 BUTTONS_CNT = 99 # TODO
 PAGE_LINES = 14 # Header + 6 * label + 6 * cont + textbox
@@ -387,6 +388,8 @@ datarefs = [
   ]
 
 buttons_press_event = [0] * BUTTONS_CNT
+radio_page = mcdu_radio_page.RadioPage()  # ATC COMM key -> own VHF radio page (captain MCDU)
+RADIO_DATAREFS = set(mcdu_radio_page.RADIO_DATAREFS)
 buttons_release_event = [0] * BUTTONS_CNT
 
 usb_retry = False
@@ -504,6 +507,11 @@ def RequestDataRefs(xp, config):
             freq = 2
         xp.AddDataRef(dataref_switch_mcdu(d[0], config), freq)
         dataref_cnt += 1
+    if not config & DEVICEMASK.FO:
+        for d in mcdu_radio_page.RADIO_DATAREFS:
+            print(f"[MCDU] register radio page dataref {d}")
+            xp.AddDataRef(d, 5)
+            dataref_cnt += 1
     print(f"[MCDU] registered {dataref_cnt} datarefs")
 
 
@@ -521,6 +529,20 @@ def mcdu_button_event(xp):
             continue
         if buttons_press_event[b.id]:
             buttons_press_event[b.id] = 0
+
+            if not device_config & DEVICEMASK.FO:  # radio page on the ATC COMM key
+                consumed, actions = radio_page.handle_key(b.label, values if isinstance(values, dict) else {})
+                for a in actions:
+                    if a[0] == "cmd":
+                        print(f'[MCDU] radio page: send command {a[1]}')
+                        xp.SendCommand(a[1])
+                    else:
+                        print(f'[MCDU] radio page: set dataref {a[1]} to {a[2]}')
+                        xp.WriteDataRef(a[1], a[2])
+                if consumed:
+                    if buttons_release_event[b.id]:
+                        buttons_release_event[b.id] = 0
+                    continue
 
             if device_config & DEVICEMASK.FO:
                 b.dataref = b.dataref.replace('AirbusFBW/MCDU1', 'AirbusFBW/MCDU2')
@@ -643,6 +665,8 @@ def set_datacache(usb_mgr, display_mgr, values):
     spw_line = [0] * PAGE_BYTES_PER_LINE
     spa_line = [0] * PAGE_BYTES_PER_LINE
     for v in values:
+        if v in RADIO_DATAREFS:
+            continue  # used by the radio page only
         pos = 0
         val = int(values[v])
         data_valid = False
@@ -776,6 +800,10 @@ def set_datacache(usb_mgr, display_mgr, values):
             page_tmp[13][i * PAGE_BYTES_PER_CHAR ] = str('w')
             page_tmp[13][i * PAGE_BYTES_PER_CHAR + 1] = 0
             page_tmp[13][i * PAGE_BYTES_PER_CHAR + PAGE_BYTES_PER_CHAR - 1] = chr(0x20)
+
+    if radio_page.active:
+        page_tmp = radio_page.render(values)
+        vertslew_key = 0
 
     if page != page_tmp:
         new = True
