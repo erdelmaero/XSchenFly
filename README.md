@@ -122,7 +122,7 @@ VHF1 ON RX     VHF2 OFF    LSK5L/R monitor on/off, RX = receiving (xPilot)
   Empty scratchpad + LSK1R/2R copies the standby frequency into the scratchpad.
 * Transmit works like a Garmin audio panel: the new transmit radio is heard, the old one is switched off.
   The other radio can be monitored with LISTEN; the transmit radio is always heard.
-* ATC COMM again or any page key (FPLN, PERF, MENU, ...) leaves the radio page.
+* Any other page key (FPLN, PERF, MENU, ...) leaves the radio page; ATC COMM again stays on it.
 * (TX) appears while the joystick button bound to `xpilot/ptt` in X-Plane is held (read from the joystick
   settings at start; X-Plane reports joystick buttons only while its window is in front).
 

@@ -9,7 +9,7 @@ MCDU MENU -> ATSU). It shows and controls VHF1/VHF2:
     LSK5L/5R  LISTEN (monitor) toggle for the radio that is not TX; the TX radio is always heard
 
 The scratchpad is the driver's own (digits, '.', CLR); keys typed here never reach the ToLiss scratchpad.
-ATC COMM again or any page key (FPLN, PERF, MENU ...) leaves the page; the page key is passed on to ToLiss.
+Any other page key (FPLN, PERF, MENU ...) leaves the page and is passed on to ToLiss; ATC COMM again stays.
 
 Display source are the X-Plane datarefs that VATSIM clients (xPilot) read, so the page shows what VATSIM uses.
 Controls are ToLiss commands, so the ToLiss ACP/RMP stays consistent. Pure logic: no USB, no UDP.
@@ -157,8 +157,8 @@ class RadioPage:
     def handle_key(self, label, values):
         """Returns (consumed, actions). consumed=False: the key goes to ToLiss as usual.
         actions: ("cmd", command) or ("dref", dataref, value)."""
-        if label == "ATC":
-            self.active = not self.active
+        if label == "ATC":  # opens the page; pressed again it stays (like any MCDU page key)
+            self.active = True
             self.message = ""
             return True, []
         if not self.active:

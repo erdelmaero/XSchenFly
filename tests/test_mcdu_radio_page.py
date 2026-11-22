@@ -45,14 +45,14 @@ def test_inactive_passes_everything():
     assert p.handle_key("KEY1", V) == (False, [])
 
 
-def test_atc_toggles_and_page_keys_exit():
+def test_atc_opens_and_page_keys_exit():
     p = opened()
     assert p.active
     assert p.handle_key("FPLN", V) == (False, [])  # passed on to ToLiss
     assert not p.active
     p = opened()
-    assert p.handle_key("ATC", V) == (True, [])
-    assert not p.active
+    assert p.handle_key("ATC", V) == (True, [])  # second press stays on the page
+    assert p.active
 
 
 def test_pass_keys_keep_page():
