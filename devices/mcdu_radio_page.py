@@ -17,29 +17,57 @@ Controls are ToLiss commands, so the ToLiss ACP/RMP stays consistent. Pure logic
 
 RA = "sim/cockpit2/radios/actuators/"
 FREQ = {1: RA + "com1_frequency_hz_833", 2: RA + "com2_frequency_hz_833"}  # kHz, e.g. 121800
+# X-Plane's comN standby / flip belong to ToLiss RMP N (its current standby window), NOT to VHF N. Only the active
+# frequencies comN_frequency_hz_833 are fixed to VHF1/VHF2. Keyed by RMP number:
 STBY = {1: RA + "com1_standby_frequency_hz_833", 2: RA + "com2_standby_frequency_hz_833"}
+RMP_SEL = {1: "AirbusFBW/RMP1SelFunc", 2: "AirbusFBW/RMP2SelFunc"}  # radio tuned on the RMP: 0 = VHF1, 1 = VHF2
+# per-RMP standby memory of each radio (MHz float, e.g. 121.70613), used when no RMP is tuned to the radio
+MEM = {(r, radio): f"AirbusFBW/DRAIMS{r}/VHFStbyFreqs[{radio - 1}]" for r in (1, 2) for radio in (1, 2)}
 LISTEN = {1: RA + "audio_selection_com1", 2: RA + "audio_selection_com2"}  # 0/1
 TX = RA + "audio_com_selection"  # 6 = com1, 7 = com2 (DataRefs.txt)
 TX_VALUE = {1: 6, 2: 7}
 
-RADIO_DATAREFS = [FREQ[1], FREQ[2], STBY[1], STBY[2], LISTEN[1], LISTEN[2], TX]
+RADIO_DATAREFS = [FREQ[1], FREQ[2], STBY[1], STBY[2], LISTEN[1], LISTEN[2], TX, RMP_SEL[1], RMP_SEL[2], *MEM.values()]
 
 # ToLiss commands (registered by the ToLiss plugin, descriptions from its binary)
 CMD_TX = {1: "AirbusFBW/ACP1/VHF1Press", 2: "AirbusFBW/ACP1/VHF2Press"}  # "Press VHF1 talk button on ACP1"
 CMD_LISTEN = {1: "AirbusFBW/ListenVHF1", 2: "AirbusFBW/ListenVHF2"}  # "Toggling monitoring of VHF1"
-CMD_SWAP = {1: "sim/radios/com1_standy_flip", 2: "sim/radios/com2_standy_flip"}  # also handled by ToLiss
+CMD_SWAP = {1: "sim/radios/com1_standy_flip", 2: "sim/radios/com2_standy_flip"}  # keyed by RMP, ToLiss handles
+CMD_SELECT = {(1, 1): "AirbusFBW/VHF1Capt", (1, 2): "AirbusFBW/VHF2Capt",  # (RMP, radio): VHF button on the RMP
+              (2, 1): "AirbusFBW/VHF1Co", (2, 2): "AirbusFBW/VHF2Co"}
+
+# Verified in the sim (ToLiss A320neo, X-Plane 12.4.3, Web API + UDP):
+# - writing comN_standby_frequency_hz_833 sets the standby window of RMP N and stays; comN_standy_flip swaps the
+#   radio RMP N is tuned to (with RMP1 on VHF2, com1 flip swapped VHF2!) -> act through an RMP tuned to the radio;
+# - "VHFnCapt" followed at once by the flip / the standby write (same UDP burst) acts on the newly selected radio;
+# - ACP1/VHFnPress sets audio_com_selection 6/7 but does NOT switch listening on (done here);
+#   ListenVHFn toggles audio_selection_comN.
 
 
-# Verified in the sim (ToLiss A320neo, X-Plane 12.4.3, Web API): writing comN_standby_frequency_hz_833 is adopted by
-# the ToLiss RMP (VHF1 = RMP1, VHF2 = RMP2) and stays; comN_standy_flip swaps exactly; ACP1/VHFnPress sets
-# audio_com_selection 6/7 but does NOT switch listening on (done here); ListenVHFn toggles audio_selection_comN.
-def stby_actions(radio, khz):
-    """Actions that set the standby frequency of a radio."""
-    return [("dref", STBY[radio], khz)]
+def rmp_for(radio, values):
+    """(RMP number, actions to select the radio on it first). Prefers RMP1 for VHF1 and RMP2 for VHF2."""
+    for r in (radio, 3 - radio):
+        if int(values.get(RMP_SEL[r], radio - 1 if r == radio else -1)) == radio - 1:
+            return r, []
+    return radio, [("cmd", CMD_SELECT[(radio, radio)])]
 
 
-def swap_actions(radio):
-    return [("cmd", CMD_SWAP[radio])]
+def stby_khz(radio, values):
+    r, select = rmp_for(radio, values)
+    if not select:
+        return values.get(STBY[r])
+    mhz = values.get(MEM[(r, radio)])
+    return int(mhz * 1000 + 0.5) // 5 * 5 if mhz else None  # 121.70613 -> 121705 (8.33 channel name)
+
+
+def stby_actions(radio, khz, values):
+    r, select = rmp_for(radio, values)
+    return select + [("dref", STBY[r], khz)]
+
+
+def swap_actions(radio, values):
+    r, select = rmp_for(radio, values)
+    return select + [("cmd", CMD_SWAP[r])]
 
 
 PAGE_KEYS = {"DIRTO", "PROG", "PERF", "INIT", "DATA", "FPLN", "RADNAV", "FUEL", "SEC-FPLN", "MENU", "AIRPORT"}
@@ -109,7 +137,7 @@ class RadioPage:
         elif label == "Clear":
             self.scratch = self.scratch[:-1]
         elif label in ("LSK1L", "LSK2L"):
-            return True, swap_actions(int(label[3]))
+            return True, swap_actions(int(label[3]), values)
         elif label in ("LSK1R", "LSK2R"):
             return True, self._enter_stby(int(label[3]), values)
         elif label == "LSK4L":
@@ -124,7 +152,7 @@ class RadioPage:
 
     def _enter_stby(self, radio, values):
         if not self.scratch:
-            stby = values.get(STBY[radio])
+            stby = stby_khz(radio, values)
             if stby:
                 self.scratch = fmt_freq(stby)
             return []
@@ -133,7 +161,7 @@ class RadioPage:
             self.message = "FORMAT ERROR"
             return []
         self.scratch = ""
-        return stby_actions(radio, khz)
+        return stby_actions(radio, khz, values)
 
     def _transmit(self, radio, values):
         other = 3 - radio
@@ -172,7 +200,7 @@ class RadioPage:
             put(radio * 2 - 1, 1, f"VHF{radio} ACTIVE", small=1)
             put(radio * 2 - 1, 0, "STBY ", small=1, right=True)
             put(radio * 2, 0, "<" + fmt_freq(values.get(FREQ[radio])), "G")
-            put(radio * 2, 0, fmt_freq(values.get(STBY[radio])) + ">", "B", right=True)
+            put(radio * 2, 0, fmt_freq(stby_khz(radio, values)) + ">", "B", right=True)
         put(7, 1, "TRANSMIT", small=1)
         put(9, 1, "LISTEN", small=1)
         for radio, right in ((1, False), (2, True)):
