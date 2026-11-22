@@ -15,6 +15,9 @@ Display source are the X-Plane datarefs that VATSIM clients (xPilot) read, so th
 Controls are ToLiss commands, so the ToLiss ACP/RMP stays consistent. Pure logic: no USB, no UDP.
 """
 
+import re
+from pathlib import Path
+
 RA = "sim/cockpit2/radios/actuators/"
 FREQ = {1: RA + "com1_frequency_hz_833", 2: RA + "com2_frequency_hz_833"}  # kHz, e.g. 121800
 # X-Plane's comN standby / flip belong to ToLiss RMP N (its current standby window), NOT to VHF N. Only the active
@@ -27,12 +30,39 @@ LISTEN = {1: RA + "audio_selection_com1", 2: RA + "audio_selection_com2"}  # 0/1
 TX = RA + "audio_com_selection"  # 6 = com1, 7 = com2 (DataRefs.txt)
 TX_VALUE = {1: 6, 2: 7}
 # xPilot (VATSIM client plugin): 1 while audio is received on the radio. Only present while xPilot provides them;
-# missing values read as 0, so the page simply shows no RX then. xPilot has no "transmitting" dataref (PTT is only a
-# command), so TX marks the selected transmit radio.
+# missing values read as 0, so the page simply shows no RX then.
 RX = {1: "xpilot/audio/com1_rx", 2: "xpilot/audio/com2_rx"}
+# xPilot has no "transmitting" dataref (PTT is only the command xpilot/ptt). "(TX)" is shown while the joystick
+# button bound to xpilot/ptt is held: X-Plane reports it in joystick_button_values (only while X-Plane is in front).
+PTT_COMMAND = "xpilot/ptt"
+BUTTONS = "sim/joystick/joystick_button_values"
+
+
+def find_ptt_button(xplane_dir=None):
+    """Index of the joystick button bound to xpilot/ptt in X-Plane's joystick settings, or None."""
+    if xplane_dir is None:
+        prefs = Path.home() / "Library/Preferences/x-plane_install_12.txt"  # where X-Plane notes its install paths
+        dirs = [Path(line.strip()) for line in prefs.read_text().splitlines()] if prefs.exists() else []
+        dirs.append(Path.home() / "X-Plane 12")
+        xplane_dir = next((d for d in dirs if (d / "Output/preferences").is_dir()), None)
+        if xplane_dir is None:
+            return None
+    pref_dir = Path(xplane_dir) / "Output/preferences"
+    files = [pref_dir / "X-Plane Joystick Settings.prf", *sorted((pref_dir / "control profiles").glob("*Joysticks.prf"))]
+    for f in files:
+        if f.exists():
+            idx = ptt_button_from_prf(f.read_text(errors="replace"))
+            if idx is not None:
+                return idx
+    return None
+
+
+def ptt_button_from_prf(text):
+    m = re.search(r"^_joy_BUTN_use(\d+) " + re.escape(PTT_COMMAND) + r"\s*$", text, re.MULTILINE)
+    return int(m.group(1)) if m else None
 
 RADIO_DATAREFS = [FREQ[1], FREQ[2], STBY[1], STBY[2], LISTEN[1], LISTEN[2], TX, RMP_SEL[1], RMP_SEL[2], *MEM.values(),
-                  RX[1], RX[2]]
+                  RX[1], RX[2]]  # plus the PTT button, see RadioPage.datarefs()
 
 # ToLiss commands (registered by the ToLiss plugin, descriptions from its binary)
 CMD_TX = {1: "AirbusFBW/ACP1/VHF1Press", 2: "AirbusFBW/ACP1/VHF2Press"}  # "Press VHF1 talk button on ACP1"
@@ -114,10 +144,14 @@ def fmt_freq(khz):
 
 
 class RadioPage:
-    def __init__(self):
+    def __init__(self, ptt_button=None):
         self.active = False
         self.scratch = ""
         self.message = ""
+        self.ptt = f"{BUTTONS}[{ptt_button}]" if ptt_button is not None else None
+
+    def datarefs(self):
+        return RADIO_DATAREFS + ([self.ptt] if self.ptt else [])
 
     # ------------------------------------------------------------------ keys
     def handle_key(self, label, values):
@@ -215,7 +249,8 @@ class RadioPage:
         put(9, 1, "LISTEN", small=1)
         for radio, right in ((1, False), (2, True)):
             sel = tx == TX_VALUE[radio]
-            put(8, 0, f"VHF{radio}" + (" TX" if sel else ""), "G" if sel else "B", right=right)
+            talking = sel and self.ptt and int(values.get(self.ptt, 0))
+            put(8, 0, f"VHF{radio}" + (" (TX)" if talking else ""), "G" if sel else "B", right=right)
             on = bool(int(values.get(LISTEN[radio], 0)))
             rx = " RX" if int(values.get(RX[radio], 0)) else ""
             put(10, 0, f"VHF{radio} " + ("ON" if on else "OFF") + rx, "G" if on else "B", right=right)

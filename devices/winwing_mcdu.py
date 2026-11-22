@@ -388,8 +388,9 @@ datarefs = [
   ]
 
 buttons_press_event = [0] * BUTTONS_CNT
-radio_page = mcdu_radio_page.RadioPage()  # ATC COMM key -> own VHF radio page (captain MCDU)
-RADIO_DATAREFS = set(mcdu_radio_page.RADIO_DATAREFS)
+radio_page = mcdu_radio_page.RadioPage(mcdu_radio_page.find_ptt_button())  # ATC COMM key -> VHF radio page
+print(f"[MCDU] radio page: PTT dataref {radio_page.ptt}")
+RADIO_DATAREFS = set(radio_page.datarefs())
 buttons_release_event = [0] * BUTTONS_CNT
 
 usb_retry = False
@@ -508,7 +509,7 @@ def RequestDataRefs(xp, config):
         xp.AddDataRef(dataref_switch_mcdu(d[0], config), freq)
         dataref_cnt += 1
     if not config & DEVICEMASK.FO:
-        for d in mcdu_radio_page.RADIO_DATAREFS:
+        for d in radio_page.datarefs():
             print(f"[MCDU] register radio page dataref {d}")
             xp.AddDataRef(d, 5)
             dataref_cnt += 1

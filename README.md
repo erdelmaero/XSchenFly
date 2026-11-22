@@ -113,7 +113,7 @@ The ATC COMM key of the captain MCDU opens a VHF radio page instead of the ToLis
  VHF2 ACTIVE       STBY
 122.800 <>       121.500     LSK2L swap VHF2      LSK2R scratchpad -> VHF2 standby
  TRANSMIT
-VHF1 TX            VHF2     LSK4L/R transmit on VHF1/VHF2
+VHF1 (TX)          VHF2     LSK4L/R transmit on VHF1/VHF2 (green), (TX) while PTT is held
  LISTEN
 VHF1 ON RX     VHF2 OFF    LSK5L/R monitor on/off, RX = receiving (xPilot)
 121.8                       own scratchpad: digits, '.', CLR
@@ -123,6 +123,8 @@ VHF1 ON RX     VHF2 OFF    LSK5L/R monitor on/off, RX = receiving (xPilot)
 * Transmit works like a Garmin audio panel: the new transmit radio is heard, the old one is switched off.
   The other radio can be monitored with LISTEN; the transmit radio is always heard.
 * ATC COMM again or any page key (FPLN, PERF, MENU, ...) leaves the radio page.
+* (TX) appears while the joystick button bound to `xpilot/ptt` in X-Plane is held (read from the joystick
+  settings at start; X-Plane reports joystick buttons only while its window is in front).
 
 ## developer documentation
 See [documention](./documentation/README.md) for developers. TODO
