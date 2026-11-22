@@ -249,8 +249,14 @@ class RadioPage:
         put(9, 1, "LISTEN", small=1)
         for radio, right in ((1, False), (2, True)):
             sel = tx == TX_VALUE[radio]
+            # "*" (and "(TX)" while PTT is held) on the inner side: "VHF1* (TX)" / "(TX) *VHF2"
             talking = sel and self.ptt and int(values.get(self.ptt, 0))
-            put(8, 0, f"VHF{radio}" + (" (TX)" if talking else ""), "G" if sel else "B", right=right)
+            star, tx = ("*" if sel else ""), ("(TX)" if talking else "")
+            if right:
+                text = (tx + " " if tx else "") + star + f"VHF{radio}"
+            else:
+                text = f"VHF{radio}" + star + (" " + tx if tx else "")
+            put(8, 0, text, "G" if sel else "B", right=right)
             on = bool(int(values.get(LISTEN[radio], 0)))
             rx = " RX" if int(values.get(RX[radio], 0)) else ""
             put(10, 0, f"VHF{radio}" + rx, "G" if on else "B", right=right)  # green = listening, cyan = off

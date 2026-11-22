@@ -137,7 +137,7 @@ def test_render():
     assert text(page, 2) == "121.800 <>" + " " * 7 + "118.705"
     assert color_at(page, 2, 0) == "G" and color_at(page, 2, 23) == "B"
     assert text(page, 4).startswith("122.800 <>") and text(page, 4).endswith("121.500")
-    assert text(page, 8).startswith("VHF1 ") and "TX" not in text(page, 8) and text(page, 8).endswith(" VHF2")
+    assert text(page, 8) == "VHF1*" + " " * 15 + "VHF2"
     assert color_at(page, 8, 0) == "G" and color_at(page, 8, 23) == "B"
     assert text(page, 10) == "VHF1" + " " * 16 + "VHF2"
     assert color_at(page, 10, 0) == "G" and color_at(page, 10, 23) == "B"
@@ -197,9 +197,9 @@ def test_tx_only_while_ptt_held():
     assert p.ptt == "sim/joystick/joystick_button_values[508]" and p.ptt in p.datarefs()
     assert "TX" not in text(p.render(V), 8)
     page = p.render(dict(V, **{p.ptt: 1}))
-    assert text(page, 8).startswith("VHF1 (TX)") and color_at(page, 8, 0) == "G"
+    assert text(page, 8) == "VHF1* (TX)" + " " * 10 + "VHF2" and color_at(page, 8, 0) == "G"
     page = p.render(dict(V, **{p.ptt: 1, rp.TX: 7}))  # TX on VHF2
-    assert text(page, 8).startswith("VHF1 ") and text(page, 8).endswith("VHF2 (TX)")
+    assert text(page, 8) == "VHF1" + " " * 10 + "(TX) *VHF2"
 
 
 def test_no_ptt_button_no_tx():
@@ -211,3 +211,8 @@ def test_ptt_button_from_prf():
     prf = "_joy_BUTN_use8 sim/operation/contact_atc_ptt\n_joy_BUTN_use508 xpilot/ptt\n_joy_BUTN_use_desc508 xPilot: Radio PTT\n"
     assert rp.ptt_button_from_prf(prf) == 508
     assert rp.ptt_button_from_prf("_joy_BUTN_use9 sim/none/none\n") is None
+
+
+def test_tx_star_inside_without_ptt():
+    page = opened().render(dict(V, **{rp.TX: 7}))
+    assert text(page, 8) == "VHF1" + " " * 15 + "*VHF2"

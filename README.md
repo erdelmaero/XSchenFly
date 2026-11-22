@@ -113,7 +113,7 @@ The ATC COMM key of the captain MCDU opens a VHF radio page instead of the ToLis
  VHF2 ACTIVE       STBY
 122.800 <>       121.500     LSK2L swap VHF2      LSK2R scratchpad -> VHF2 standby
  TRANSMIT
-VHF1 (TX)          VHF2     LSK4L/R transmit on VHF1/VHF2 (green), (TX) while PTT is held
+VHF1* (TX)         VHF2     LSK4L/R transmit on VHF1/VHF2 (green, *), (TX) while PTT is held
  LISTEN
 VHF1 RX            VHF2     LSK5L/R monitor on/off (green = on), RX = receiving (xPilot)
 121.8                       own scratchpad: digits, '.', CLR
