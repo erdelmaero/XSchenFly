@@ -30,8 +30,11 @@ CMD_LISTEN = {1: "AirbusFBW/ListenVHF1", 2: "AirbusFBW/ListenVHF2"}  # "Toggling
 CMD_SWAP = {1: "sim/radios/com1_standy_flip", 2: "sim/radios/com2_standy_flip"}  # also handled by ToLiss
 
 
+# Verified in the sim (ToLiss A320neo, X-Plane 12.4.3, Web API): writing comN_standby_frequency_hz_833 is adopted by
+# the ToLiss RMP (VHF1 = RMP1, VHF2 = RMP2) and stays; comN_standy_flip swaps exactly; ACP1/VHFnPress sets
+# audio_com_selection 6/7 but does NOT switch listening on (done here); ListenVHFn toggles audio_selection_comN.
 def stby_actions(radio, khz):
-    """Actions that set the standby frequency of a radio (method to be confirmed in the sim)."""
+    """Actions that set the standby frequency of a radio."""
     return [("dref", STBY[radio], khz)]
 
 
