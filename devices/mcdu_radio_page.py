@@ -251,11 +251,11 @@ class RadioPage:
             sel = tx == TX_VALUE[radio]
             # "*" (and "(TX)" while PTT is held) on the inner side: "VHF1* (TX)" / "(TX) *VHF2"
             talking = sel and self.ptt and int(values.get(self.ptt, 0))
-            star, tx = ("*" if sel else ""), ("(TX)" if talking else "")
+            star, tx_mark = ("*" if sel else ""), ("(TX)" if talking else "")
             if right:
-                text = (tx + " " if tx else "") + star + f"VHF{radio}"
+                text = (tx_mark + " " if tx_mark else "") + star + f"VHF{radio}"
             else:
-                text = f"VHF{radio}" + star + (" " + tx if tx else "")
+                text = f"VHF{radio}" + star + (" " + tx_mark if tx_mark else "")
             put(8, 0, text, "G" if sel else "B", right=right)
             on = bool(int(values.get(LISTEN[radio], 0)))
             rx = " RX" if int(values.get(RX[radio], 0)) else ""
