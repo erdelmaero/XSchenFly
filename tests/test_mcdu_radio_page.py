@@ -134,12 +134,12 @@ def test_render():
     page = p.render(V)
     assert len(page) == rp.LINES and all(len(line) == rp.CHARS * 3 for line in page)
     assert text(page, 0).strip() == "VHF RADIO"
-    assert text(page, 2) == "<121.800" + " " * 8 + "118.705>"
-    assert color_at(page, 2, 1) == "G" and color_at(page, 2, 23) == "B"
-    assert text(page, 4).startswith("<122.800") and text(page, 4).endswith("121.500>")
-    assert text(page, 8).startswith("<VHF1*") and text(page, 8).endswith("VHF2 >")
+    assert text(page, 2) == "121.800 <->" + " " * 6 + "118.705"
+    assert color_at(page, 2, 0) == "G" and color_at(page, 2, 23) == "B"
+    assert text(page, 4).startswith("122.800 <->") and text(page, 4).endswith("121.500")
+    assert text(page, 8).startswith("VHF1*") and text(page, 8).endswith(" VHF2")
     assert color_at(page, 8, 0) == "G" and color_at(page, 8, 23) == "B"
-    assert text(page, 10).startswith("<VHF1 ON") and text(page, 10).endswith("VHF2 OFF>")
+    assert text(page, 10).startswith("VHF1 ON") and text(page, 10).endswith("VHF2 OFF")
     assert page[1][3 * 1 + 1] == 1  # labels small font
 
 
@@ -151,8 +151,8 @@ def test_render_without_values():
 def test_rmp1_on_vhf2_vhf1_uses_memory_and_selects_first():
     p = opened()
     page = p.render(RMP1_ON_VHF2)
-    assert text(page, 2).endswith("118.705>")  # VHF1 standby from RMP1 memory, not RMP1 window (VHF2)
-    assert text(page, 4).endswith("121.705>")  # VHF2 via RMP1 (captain first)
+    assert text(page, 2).endswith("118.705")  # VHF1 standby from RMP1 memory, not RMP1 window (VHF2)
+    assert text(page, 4).endswith("121.705")  # VHF2 via RMP1 (captain first)
     assert p.handle_key("LSK1L", RMP1_ON_VHF2)[1] == [("cmd", "AirbusFBW/VHF1Capt"), ("cmd", rp.CMD_SWAP[1])]
     p.handle_key("KEY1", RMP1_ON_VHF2), p.handle_key("KEY2", RMP1_ON_VHF2), p.handle_key("KEY0", RMP1_ON_VHF2)
     assert p.handle_key("LSK1R", RMP1_ON_VHF2)[1] == [("cmd", "AirbusFBW/VHF1Capt"), ("dref", rp.STBY[1], 120000)]
@@ -162,8 +162,8 @@ def test_rmp1_on_vhf2_vhf1_uses_memory_and_selects_first():
 def test_crossed_rmps_use_the_tuned_one():
     p = opened()
     page = p.render(CROSSED)
-    assert text(page, 2).endswith("136.575>")  # VHF1 is on RMP2
-    assert text(page, 4).endswith("121.705>")  # VHF2 is on RMP1
+    assert text(page, 2).endswith("136.575")  # VHF1 is on RMP2
+    assert text(page, 4).endswith("121.705")  # VHF2 is on RMP1
     assert p.handle_key("LSK1L", CROSSED)[1] == [("cmd", rp.CMD_SWAP[2])]
     assert p.handle_key("LSK2L", CROSSED)[1] == [("cmd", rp.CMD_SWAP[1])]
 
@@ -180,4 +180,4 @@ def test_rmp2_on_vhf1_vhf1_via_rmp1_when_tuned():
     p = opened()
     assert p.handle_key("LSK1L", v)[1] == [("cmd", rp.CMD_SWAP[1])]  # captain RMP
     assert p.handle_key("LSK2L", v)[1] == [("cmd", "AirbusFBW/VHF2Co"), ("cmd", rp.CMD_SWAP[2])]
-    assert text(p.render(v), 4).endswith("121.500>")  # RMP2 memory of VHF2
+    assert text(p.render(v), 4).endswith("121.500")  # RMP2 memory of VHF2

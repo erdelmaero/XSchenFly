@@ -202,17 +202,18 @@ class RadioPage:
         for radio in (1, 2):
             put(radio * 2 - 1, 1, f"VHF{radio} ACTIVE", small=1)
             put(radio * 2 - 1, 0, "STBY ", small=1, right=True)
-            put(radio * 2, 0, "<" + fmt_freq(values.get(FREQ[radio])), "G")
-            put(radio * 2, 0, fmt_freq(stby_khz(radio, values)) + ">", "B", right=True)
+            # side arrows mean "page change" on an MCDU, so only a swap marker next to the active frequency
+            put(radio * 2, 0, fmt_freq(values.get(FREQ[radio])), "G")
+            put(radio * 2, 8, "<->")
+            put(radio * 2, 0, fmt_freq(stby_khz(radio, values)), "B", right=True)
         put(7, 1, "TRANSMIT", small=1)
         put(9, 1, "LISTEN", small=1)
         for radio, right in ((1, False), (2, True)):
             sel = tx == TX_VALUE[radio]
-            text = f"VHF{radio}" + ("*" if sel else " ")
-            put(8, 0, text + ">" if right else "<" + text, "G" if sel else "B", right=right)
+            text = f"VHF{radio}" + ("*" if sel else "")
+            put(8, 0, text, "G" if sel else "B", right=right)
             on = bool(int(values.get(LISTEN[radio], 0)))
-            text = f"VHF{radio} " + ("ON" if on else "OFF")
-            put(10, 0, text + ">" if right else "<" + text, "G" if on else "B", right=right)
+            put(10, 0, f"VHF{radio} " + ("ON" if on else "OFF"), "G" if on else "B", right=right)
         if self.message:
             put(13, 0, self.message, "A")
         else:

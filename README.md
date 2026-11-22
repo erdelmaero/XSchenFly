@@ -109,13 +109,13 @@ The ATC COMM key of the captain MCDU opens a VHF radio page instead of the ToLis
 ```
         VHF RADIO
  VHF1 ACTIVE       STBY
-<121.800       118.705>     LSK1L swap VHF1      LSK1R scratchpad -> VHF1 standby
+121.800 <->      118.705     LSK1L swap VHF1      LSK1R scratchpad -> VHF1 standby
  VHF2 ACTIVE       STBY
-<122.800       121.500>     LSK2L swap VHF2      LSK2R scratchpad -> VHF2 standby
+122.800 <->      121.500     LSK2L swap VHF2      LSK2R scratchpad -> VHF2 standby
  TRANSMIT
-<VHF1*           VHF2 >     LSK4L/R transmit on VHF1/VHF2
+VHF1*              VHF2     LSK4L/R transmit on VHF1/VHF2
  LISTEN
-<VHF1 ON       VHF2 OFF>    LSK5L/R monitor on/off
+VHF1 ON        VHF2 OFF    LSK5L/R monitor on/off
 121.8                       own scratchpad: digits, '.', CLR
 ```
 * Frequencies: `121.8`, `121.800`, `1218` or `121800`; 118.000-136.990, 25 kHz and 8.33 kHz channels.
