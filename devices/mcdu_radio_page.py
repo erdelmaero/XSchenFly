@@ -26,8 +26,13 @@ MEM = {(r, radio): f"AirbusFBW/DRAIMS{r}/VHFStbyFreqs[{radio - 1}]" for r in (1,
 LISTEN = {1: RA + "audio_selection_com1", 2: RA + "audio_selection_com2"}  # 0/1
 TX = RA + "audio_com_selection"  # 6 = com1, 7 = com2 (DataRefs.txt)
 TX_VALUE = {1: 6, 2: 7}
+# xPilot (VATSIM client plugin): 1 while audio is received on the radio. Only present while xPilot provides them;
+# missing values read as 0, so the page simply shows no RX then. xPilot has no "transmitting" dataref (PTT is only a
+# command), so TX marks the selected transmit radio.
+RX = {1: "xpilot/audio/com1_rx", 2: "xpilot/audio/com2_rx"}
 
-RADIO_DATAREFS = [FREQ[1], FREQ[2], STBY[1], STBY[2], LISTEN[1], LISTEN[2], TX, RMP_SEL[1], RMP_SEL[2], *MEM.values()]
+RADIO_DATAREFS = [FREQ[1], FREQ[2], STBY[1], STBY[2], LISTEN[1], LISTEN[2], TX, RMP_SEL[1], RMP_SEL[2], *MEM.values(),
+                  RX[1], RX[2]]
 
 # ToLiss commands (registered by the ToLiss plugin, descriptions from its binary)
 CMD_TX = {1: "AirbusFBW/ACP1/VHF1Press", 2: "AirbusFBW/ACP1/VHF2Press"}  # "Press VHF1 talk button on ACP1"
@@ -204,16 +209,16 @@ class RadioPage:
             put(radio * 2 - 1, 0, "STBY ", small=1, right=True)
             # side arrows mean "page change" on an MCDU, so only a swap marker next to the active frequency
             put(radio * 2, 0, fmt_freq(values.get(FREQ[radio])), "G")
-            put(radio * 2, 8, "<->")
+            put(radio * 2, 8, "<>")  # drawn as two arrows on the MCDU
             put(radio * 2, 0, fmt_freq(stby_khz(radio, values)), "B", right=True)
         put(7, 1, "TRANSMIT", small=1)
         put(9, 1, "LISTEN", small=1)
         for radio, right in ((1, False), (2, True)):
             sel = tx == TX_VALUE[radio]
-            text = f"VHF{radio}" + ("*" if sel else "")
-            put(8, 0, text, "G" if sel else "B", right=right)
+            put(8, 0, f"VHF{radio}" + (" TX" if sel else ""), "G" if sel else "B", right=right)
             on = bool(int(values.get(LISTEN[radio], 0)))
-            put(10, 0, f"VHF{radio} " + ("ON" if on else "OFF"), "G" if on else "B", right=right)
+            rx = " RX" if int(values.get(RX[radio], 0)) else ""
+            put(10, 0, f"VHF{radio} " + ("ON" if on else "OFF") + rx, "G" if on else "B", right=right)
         if self.message:
             put(13, 0, self.message, "A")
         else:

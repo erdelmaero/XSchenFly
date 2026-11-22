@@ -134,10 +134,10 @@ def test_render():
     page = p.render(V)
     assert len(page) == rp.LINES and all(len(line) == rp.CHARS * 3 for line in page)
     assert text(page, 0).strip() == "VHF RADIO"
-    assert text(page, 2) == "121.800 <->" + " " * 6 + "118.705"
+    assert text(page, 2) == "121.800 <>" + " " * 7 + "118.705"
     assert color_at(page, 2, 0) == "G" and color_at(page, 2, 23) == "B"
-    assert text(page, 4).startswith("122.800 <->") and text(page, 4).endswith("121.500")
-    assert text(page, 8).startswith("VHF1*") and text(page, 8).endswith(" VHF2")
+    assert text(page, 4).startswith("122.800 <>") and text(page, 4).endswith("121.500")
+    assert text(page, 8).startswith("VHF1 TX") and text(page, 8).endswith(" VHF2")
     assert color_at(page, 8, 0) == "G" and color_at(page, 8, 23) == "B"
     assert text(page, 10).startswith("VHF1 ON") and text(page, 10).endswith("VHF2 OFF")
     assert page[1][3 * 1 + 1] == 1  # labels small font
@@ -181,3 +181,10 @@ def test_rmp2_on_vhf1_vhf1_via_rmp1_when_tuned():
     assert p.handle_key("LSK1L", v)[1] == [("cmd", rp.CMD_SWAP[1])]  # captain RMP
     assert p.handle_key("LSK2L", v)[1] == [("cmd", "AirbusFBW/VHF2Co"), ("cmd", rp.CMD_SWAP[2])]
     assert text(p.render(v), 4).endswith("121.500")  # RMP2 memory of VHF2
+
+
+def test_rx_from_xpilot():
+    page = opened().render(dict(V, **{rp.RX[1]: 1, rp.LISTEN[2]: 1, rp.RX[2]: 1}))
+    assert text(page, 10).startswith("VHF1 ON RX") and text(page, 10).endswith("VHF2 ON RX")
+    page = opened().render(V)  # no xPilot values: no RX
+    assert "RX" not in text(page, 10)
